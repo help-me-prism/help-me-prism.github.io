@@ -1,0 +1,327 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Prism · 논문을 읽고 이해하는 데스크톱 앱</title>
+<meta name="description" content="원문 PDF 옆에 한국어 번역을 나란히 두고, 문장·수식·그림을 짚어 AI에게 질문하세요. 논문과 노트는 내 컴퓨터에 저장됩니다. Windows·macOS용.">
+<meta property="og:title" content="Prism · 논문을 읽고 이해하는 데스크톱 앱">
+<meta property="og:description" content="원문과 한국어 번역을 나란히, 짚어서 질문하고, 내 컴퓨터에 노트로 남깁니다.">
+<meta property="og:type" content="website">
+<meta property="og:image" content="https://help-me-prism.github.io/images/og.png">
+<meta name="color-scheme" content="light dark">
+<link rel="icon" href="icon.png">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
+<style>
+:root {
+  color-scheme: light dark;
+  --paper: light-dark(#fbfaf7, #201f1d);
+  --canvas: light-dark(#efede7, #2b2b29);
+  --line: light-dark(#dedbd3, #3b3a37);
+  --muted: light-dark(#6f6e68, #9a9993);
+  --ink: light-dark(#292a27, #d6d7d3);
+  --accent: light-dark(#78b9a6, #63ab96);
+  --accent-soft: light-dark(#eaf4f1, #182c26);
+  --action: light-dark(#2f5d53, #7cc3ae);
+  --on-action: light-dark(#ffffff, #10211c);
+  --navy: #1b2740;
+  font-family: "Pretendard Variable", Pretendard, -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Malgun Gothic", "Segoe UI", sans-serif;
+}
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body { margin: 0; background: var(--paper); color: var(--ink); font-size: 16px; line-height: 1.65; word-break: keep-all; overflow-wrap: anywhere; -webkit-font-smoothing: antialiased; }
+a { color: var(--action); text-underline-offset: 3px; }
+img { max-width: 100%; height: auto; }
+.wrap { width: min(1080px, 100% - 40px); margin-inline: auto; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; border-radius: 4px; }
+
+header.top { position: sticky; top: 0; z-index: 5; background: color-mix(in srgb, var(--paper) 88%, transparent); backdrop-filter: blur(10px); border-bottom: 1px solid var(--line); }
+header.top .wrap { display: flex; align-items: center; gap: 24px; height: 60px; }
+.brand { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 18px; color: inherit; text-decoration: none; }
+.brand img { width: 30px; height: 30px; border-radius: 7px; }
+header.top nav { display: flex; gap: 22px; margin-left: auto; font-size: 14px; }
+header.top nav a { color: var(--muted); text-decoration: none; }
+header.top nav a:hover { color: var(--ink); }
+
+.button { display: inline-flex; align-items: center; justify-content: center; gap: 9px; min-height: 50px; padding: 0 22px; border: 1px solid var(--action); border-radius: 12px; background: var(--action); color: var(--on-action); font: inherit; font-weight: 650; text-decoration: none; cursor: pointer; transition: transform .12s, box-shadow .12s; }
+.button:hover { transform: translateY(-1px); box-shadow: 0 6px 18px light-dark(#2f5d5333, #0006); }
+.button.quiet { background: transparent; color: var(--ink); border-color: var(--line); font-weight: 550; }
+.button.quiet:hover { background: var(--canvas); box-shadow: none; }
+.button small { font-weight: 450; opacity: .8; }
+.button svg { width: 18px; height: 18px; flex: none; }
+
+.hero { padding: 72px 0 40px; text-align: center; }
+.hero h1 { margin: 0 auto 18px; max-width: 16em; font-size: clamp(32px, 5.4vw, 52px); line-height: 1.22; letter-spacing: -.03em; font-weight: 750; text-wrap: balance; }
+.hero p.lead { margin: 0 auto 30px; max-width: 34em; color: var(--muted); font-size: clamp(16px, 2vw, 18px); text-wrap: pretty; }
+.downloads { display: flex; flex-wrap: wrap; justify-content: center; gap: 12px; }
+.release { margin: 16px 0 0; color: var(--muted); font-size: 14px; min-height: 1.65em; }
+.release a { color: inherit; }
+
+/* A drawing of the reading window, not a screenshot: original and Korean side by side, one sentence linked. */
+.window { margin: 48px auto 0; max-width: 920px; border: 1px solid var(--line); border-radius: 14px; background: var(--canvas); box-shadow: 0 30px 70px -30px light-dark(#292a2740, #000a); overflow: hidden; text-align: left; }
+.window .bar { display: flex; align-items: center; gap: 8px; height: 38px; padding: 0 14px; border-bottom: 1px solid var(--line); background: light-dark(#f5f3ee, #262523); font-size: 12px; color: var(--muted); }
+.window .bar img { width: 16px; height: 16px; border-radius: 4px; }
+.window .bar span.toggles { margin-left: auto; display: flex; gap: 12px; }
+.window .bar b { font-weight: 550; color: var(--ink); }
+.window .bar i { font-style: normal; }
+.window .bar i::before { content: ""; display: inline-block; width: 6px; height: 6px; margin-right: 5px; border-radius: 50%; background: var(--accent); vertical-align: 1px; }
+.window .bar i.off::before { background: transparent; border: 1px solid var(--muted); }
+.panes { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; padding: 12px; }
+.page { padding: 22px 22px 26px; border-radius: 4px; background: #fff; color: #2b2b2b; font-size: 12px; line-height: 1.7; box-shadow: 0 1px 3px #0002; min-height: 250px; }
+.page h3 { margin: 0 0 10px; font-size: 14px; line-height: 1.4; font-weight: 600; }
+.page.original { font-family: Georgia, "Times New Roman", serif; }
+.page p { margin: 0 0 8px; }
+.page mark { background: #fff3a8; color: inherit; border-radius: 2px; padding: 1px 0; }
+.page .eq { margin: 10px 0; text-align: center; font-family: "Cambria Math", Georgia, serif; font-style: italic; }
+.ask { display: flex; gap: 10px; align-items: flex-start; margin: 0 12px 12px; padding: 12px 14px; border: 1px solid var(--line); border-radius: 10px; background: var(--paper); font-size: 12.5px; }
+.ask .tag { flex: none; padding: 2px 8px; border-radius: 6px; background: var(--accent-soft); color: var(--action); font-weight: 600; font-size: 11px; }
+.ask span.q { color: var(--muted); }
+
+section { padding: 68px 0; scroll-margin-top: 60px; }
+section h2 { margin: 0 0 10px; font-size: clamp(24px, 3.4vw, 32px); letter-spacing: -.02em; line-height: 1.3; }
+section p.sub { margin: 0 0 34px; color: var(--muted); max-width: 40em; }
+.features { display: grid; grid-template-columns: repeat(auto-fit, minmax(290px, 1fr)); gap: 16px; }
+.feature { padding: 24px; border: 1px solid var(--line); border-radius: 14px; background: light-dark(#fff, #262523); }
+.feature .mark { display: grid; place-items: center; width: 40px; height: 40px; margin-bottom: 16px; border-radius: 11px; background: var(--accent-soft); color: var(--action); }
+.feature .mark svg { width: 21px; height: 21px; }
+.feature h3 { margin: 0 0 8px; font-size: 17px; }
+.feature p { margin: 0; color: var(--muted); font-size: 15px; }
+
+.band { background: var(--canvas); border-block: 1px solid var(--line); }
+.install { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 18px; }
+.install article { padding: 26px; border: 1px solid var(--line); border-radius: 14px; background: var(--paper); }
+.install h3 { margin: 0 0 4px; font-size: 19px; }
+.install .need { margin: 0 0 14px; color: var(--muted); font-size: 14px; }
+.install ol { margin: 0; padding-left: 1.3em; font-size: 15px; }
+.install li { margin: 7px 0; }
+.install li::marker { color: var(--action); font-weight: 650; }
+.shots { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 16px; }
+.shots img { display: block; border-radius: 8px; border: 1px solid var(--line); }
+.note { margin: 22px 0 0; color: var(--muted); font-size: 14px; }
+
+.changes { display: grid; grid-template-columns: minmax(0, 1fr); gap: 0; max-width: 780px; }
+.changes ul { margin: 0; padding-left: 1.2em; }
+.changes li { margin: 9px 0; }
+.changes li::marker { color: var(--accent); }
+.changes p { color: var(--muted); }
+
+footer { padding: 34px 0 54px; border-top: 1px solid var(--line); color: var(--muted); font-size: 14px; }
+footer .wrap { display: flex; flex-wrap: wrap; gap: 8px 26px; align-items: center; }
+footer a { color: inherit; }
+footer .brand { font-size: 15px; margin-right: auto; }
+footer .brand img { width: 22px; height: 22px; border-radius: 5px; }
+
+@media (max-width: 720px) {
+  header.top nav a.wide { display: none; }
+  .hero { padding-top: 48px; }
+  .panes { grid-template-columns: 1fr; }
+  .page { min-height: 0; }
+  section { padding: 52px 0; }
+  .button { width: 100%; }
+}
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } .button { transition: none; } }
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="wrap">
+    <a class="brand" href="#top"><img src="icon.png" alt="">Prism</a>
+    <nav aria-label="페이지 안내">
+      <a class="wide" href="#features">기능</a>
+      <a class="wide" href="#install">설치</a>
+      <a class="wide" href="#changes">변경 내용</a>
+      <a href="#download">다운로드</a>
+    </nav>
+  </div>
+</header>
+
+<main id="top">
+  <div class="hero wrap" id="download">
+    <h1>논문을 읽고, 이해하고, 내 지식으로 남기기</h1>
+    <p class="lead">원문 PDF 옆에 한국어 번역을 나란히 두고, 문장·수식·그림을 짚어 AI에게 질문하세요. 논문과 노트는 내 컴퓨터에 저장됩니다.</p>
+    <div class="downloads" id="downloads">
+      <a class="button" href="https://github.com/help-me-prism/prism-releases/releases">다운로드 페이지 열기</a>
+    </div>
+    <p class="release" id="release" role="status">최신 버전을 확인하고 있습니다…</p>
+
+    <div class="window" aria-hidden="true">
+      <div class="bar"><img src="icon.png" alt=""><b>Prism</b><span class="toggles"><i>원문</i><i>한국어</i><i class="off">구조맵</i></span></div>
+      <div class="panes">
+        <div class="page original">
+          <h3>2 Method</h3>
+          <p>We consider a set of observations and encode each element with a shared function before aggregation.</p>
+          <p><mark>The aggregated representation is invariant to the order of the inputs.</mark> This property allows the model to handle sets of varying size.</p>
+          <div class="eq">f(S) = ρ( Σ<sub>x∈S</sub> φ(x) )</div>
+        </div>
+        <div class="page">
+          <h3>2 방법</h3>
+          <p>관측 집합을 고려하고, 각 원소를 공유 함수로 인코딩한 뒤 통합합니다.</p>
+          <p><mark>통합된 표현은 입력 순서에 영향을 받지 않습니다.</mark> 이 성질 덕분에 모델은 크기가 다른 집합을 다룰 수 있습니다.</p>
+          <div class="eq">f(S) = ρ( Σ<sub>x∈S</sub> φ(x) )</div>
+        </div>
+      </div>
+      <div class="ask"><span class="tag">문장 · 2쪽</span><span class="q">왜 순서에 영향을 받지 않는지 설명해 줘</span></div>
+    </div>
+  </div>
+
+  <section id="features">
+    <div class="wrap">
+      <h2>읽는 흐름을 끊지 않습니다</h2>
+      <p class="sub">번역기와 채팅 창, 메모장을 오가지 않고 한 화면에서 읽습니다.</p>
+      <div class="features">
+        <div class="feature">
+          <div class="mark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="8" height="16" rx="1.5"/><rect x="13" y="4" width="8" height="16" rx="1.5"/><path d="M5.5 8h3M5.5 11h3M15.5 8h3M15.5 11h3"/></svg></div>
+          <h3>원문과 한국어를 나란히</h3>
+          <p>문단 흐름대로 번역하고 수식·표·그림은 원문 그대로 보여 줍니다. 번역 옆에서 원문을 펼쳐 바로 대조할 수 있습니다.</p>
+        </div>
+        <div class="feature">
+          <div class="mark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a8 8 0 0 1-11.8 7L4 20l1.1-4.6A8 8 0 1 1 21 12z"/><path d="M9 11h6M9 14h4"/></svg></div>
+          <h3>짚어서 질문하기</h3>
+          <p>문장, 수식, 그림을 클릭해 질문에 넣으세요. AI가 그 부분을 함께 보며 답하고, 답변에서 원문 위치로 돌아갈 수 있습니다.</p>
+        </div>
+        <div class="feature">
+          <div class="mark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="6" r="2.5"/><circle cx="18" cy="6" r="2.5"/><circle cx="12" cy="18" r="2.5"/><path d="M8.5 6h7M7.3 8.2l3.5 7.5M16.7 8.2l-3.5 7.5"/></svg></div>
+          <h3>구조맵으로 전체 보기</h3>
+          <p>연구 문제, 방법, 결과, 한계를 한국어 개념 그래프로 정리합니다. 개념을 고르면 근거가 된 원문으로 이동합니다.</p>
+        </div>
+        <div class="feature">
+          <div class="mark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h9l4 4v14H6z"/><path d="M15 3v4h4M9 12h7M9 16h5"/></svg></div>
+          <h3>내 컴퓨터에 남는 노트</h3>
+          <p>기억할 것, 질문, 아이디어를 논문별 노트로 남깁니다. 노트는 Markdown 파일이라 Obsidian에서도 열 수 있습니다.</p>
+        </div>
+        <div class="feature">
+          <div class="mark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="6.5"/><path d="m20 20-4.2-4.2"/></svg></div>
+          <h3>논문 찾아 가져오기</h3>
+          <p>가진 PDF를 끌어다 놓거나 제목으로 검색하세요. arXiv, Semantic Scholar, Crossref, Europe PMC에서 찾습니다.</p>
+        </div>
+        <div class="feature">
+          <div class="mark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M5.6 18.4l2.1-2.1M16.3 7.7l2.1-2.1"/><circle cx="12" cy="12" r="3"/></svg></div>
+          <h3>쓰던 AI 계정 그대로</h3>
+          <p>ChatGPT 또는 Claude 계정을 연결해 번역과 질문에 사용합니다. 연결은 앱의 첫 화면에서 안내합니다.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="install" class="band">
+    <div class="wrap">
+      <h2>설치 방법</h2>
+      <p class="sub">내려받은 ZIP에는 설치 파일과 「설치 및 실행 가이드」 PDF가 함께 들어 있습니다. 압축을 풀고 가이드를 먼저 확인해 주세요.</p>
+      <div class="install">
+        <article>
+          <h3>Windows</h3>
+          <p class="need">Windows 10·11, 64비트</p>
+          <ol>
+            <li>ZIP 압축을 풀고 설치 EXE를 실행합니다.</li>
+            <li><b>Windows의 PC 보호</b> 화면이 나오면 <b>추가 정보</b>를 누른 뒤 <b>실행</b>을 누릅니다.</li>
+            <li>안내에 따라 설치합니다. 시작 메뉴에 Prism이 추가됩니다.</li>
+          </ol>
+          <div class="shots">
+            <img src="images/windows-smartscreen-more-info.png" width="534" height="500" loading="lazy" alt="Windows의 PC 보호 화면에서 추가 정보를 누르는 위치">
+            <img src="images/windows-smartscreen-run-anyway.png" width="532" height="500" loading="lazy" alt="Windows의 PC 보호 화면에서 실행을 누르는 위치">
+          </div>
+        </article>
+        <article>
+          <h3>macOS</h3>
+          <p class="need">Apple Silicon(M 시리즈) Mac</p>
+          <ol>
+            <li>ZIP 압축을 풀고 DMG를 엽니다.</li>
+            <li>Prism을 <b>응용 프로그램</b> 폴더로 복사합니다. 이전 버전이 있으면 종료한 뒤 교체합니다.</li>
+            <li>첫 실행이 차단되면 <b>시스템 설정 → 개인정보 보호 및 보안 → 그래도 열기</b>로 Prism을 허용합니다.</li>
+          </ol>
+        </article>
+      </div>
+      <p class="note">현재 베타는 Windows 코드 서명과 Apple 공증을 제공하지 않아 처음 실행할 때 위의 허용 절차가 필요합니다. 새 버전을 설치해도 기존 설정·대화·논문·노트는 유지됩니다.</p>
+    </div>
+  </section>
+
+  <section id="changes">
+    <div class="wrap">
+      <h2 id="changes-title">변경 내용</h2>
+      <p class="sub" id="changes-sub">이번 버전에서 달라진 점입니다.</p>
+      <div class="changes" id="changes-body"><p><a href="https://github.com/help-me-prism/prism-releases/releases">릴리스 목록에서 보기</a></p></div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <span class="brand"><img src="icon.png" alt="">Prism</span>
+    <a href="mailto:ysjsprism@gmail.com">문의 ysjsprism@gmail.com</a>
+    <a href="https://github.com/help-me-prism/prism-releases/releases">이전 버전 · 체크섬</a>
+  </div>
+</footer>
+
+<script>
+// The page reads the channel files the app itself checks for updates, so a release shows up here without an edit.
+(() => {
+  const releases = 'https://github.com/help-me-prism/prism-releases/releases'
+  const channels = 'https://raw.githubusercontent.com/help-me-prism/prism-releases/main/channels/'
+  const platforms = { win32: { name: 'Windows', detail: '64비트' }, darwin: { name: 'macOS', detail: 'Apple Silicon' } }
+  const icon = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11M7 11l5 5 5-5M5 20h14"/></svg>'
+
+  const parts = version => { const m = /^(\d+)\.(\d+)\.(\d+)(?:-beta\.(\d+))?$/.exec(version); return m && [+m[1], +m[2], +m[3], m[4] === undefined ? Infinity : +m[4]] }
+  const newer = (a, b) => { const x = parts(a.version), y = parts(b.version); for (let i = 0; i < 4; i++) if (x[i] !== y[i]) return x[i] > y[i]; return false }
+  const load = async channel => {
+    const response = await fetch(`${channels}${channel}.json`, { cache: 'no-cache' })
+    if (!response.ok) return undefined
+    const manifest = await response.json()
+    return parts(String(manifest.version)) && Array.isArray(manifest.assets) ? manifest : undefined
+  }
+  const visitor = () => {
+    const ua = navigator.userAgent, platform = navigator.userAgentData?.platform || navigator.platform || ''
+    if (/Android|iPhone|iPad|iPod/.test(ua) || /Mac/.test(platform) && navigator.maxTouchPoints > 1) return 'mobile'
+    return /Win/.test(platform) ? 'win32' : /Mac/.test(platform) ? 'darwin' : 'other'
+  }
+  // Only files of this release in the release repository are offered. The guide ZIP sits beside each installer.
+  const downloadUrl = (manifest, asset) => {
+    const prefix = `${releases}/download/v${manifest.version}/`
+    return typeof asset.url === 'string' && asset.url.startsWith(prefix) && /\.(exe|dmg)$/.test(asset.url) ? asset.url.replace(/\.(exe|dmg)$/, '-Setup-Guide.zip') : undefined
+  }
+  const inline = (parent, text) => {
+    for (const piece of text.replace(/\[([^\]]+)\]\([^)]*\)/g, '$1').split(/(\*\*[^*]+\*\*)/)) {
+      if (!piece) continue
+      const bold = /^\*\*(.+)\*\*$/.exec(piece)
+      if (bold) parent.appendChild(Object.assign(document.createElement('b'), { textContent: bold[1] })); else parent.appendChild(document.createTextNode(piece))
+    }
+  }
+  const showChanges = manifest => {
+    const notes = String(manifest.notes ?? ''), section = /^## 변경사항\s*$([\s\S]*?)(?=^## |(?![\s\S]))/m.exec(notes)
+    if (!section) return
+    const body = document.getElementById('changes-body'), list = document.createElement('ul'), rest = []
+    for (const line of section[1].split('\n').map(line => line.trim()).filter(Boolean)) {
+      if (line.startsWith('- ')) inline(list.appendChild(document.createElement('li')), line.slice(2)); else rest.push(line)
+    }
+    if (!list.children.length) return
+    body.replaceChildren(list)
+    for (const line of rest) inline(body.appendChild(document.createElement('p')), line)
+    document.getElementById('changes-title').textContent = `Prism ${manifest.version} 변경 내용`
+  }
+  const show = manifest => {
+    const mine = visitor(), buttons = []
+    for (const id of Object.keys(platforms).sort((a, b) => (b === mine) - (a === mine))) {
+      const asset = manifest.assets.find(item => item.platform === id), url = asset && downloadUrl(manifest, asset)
+      if (!url) continue
+      const link = document.createElement('a'), quiet = buttons.length > 0 && mine in platforms
+      link.className = quiet ? 'button quiet' : 'button'; link.href = url
+      link.innerHTML = icon
+      link.append(`${platforms[id].name}용 다운로드 `, Object.assign(document.createElement('small'), { textContent: platforms[id].detail }))
+      buttons.push(link)
+    }
+    if (!buttons.length) throw new Error('No downloadable asset')
+    document.getElementById('downloads').replaceChildren(...buttons)
+    const date = /최근 업데이트:\s*(\d{4}-\d{2}-\d{2})/.exec(String(manifest.notes ?? ''))?.[1]
+    const status = document.getElementById('release')
+    status.textContent = [`버전 ${manifest.version}`, date, mine === 'mobile' ? 'PC에서 내려받아 설치해 주세요' : mine === 'other' ? 'Windows와 macOS에서 사용할 수 있습니다' : '무료 베타'].filter(Boolean).join(' · ')
+    showChanges(manifest)
+  }
+  Promise.all(['beta', 'stable'].map(channel => load(channel).catch(() => undefined))).then(found => {
+    const manifest = found.filter(Boolean).reduce((best, item) => !best || newer(item, best) ? item : best, undefined)
+    if (!manifest) throw new Error('No channel')
+    show(manifest)
+  }).catch(() => { document.getElementById('release').textContent = '최신 버전을 불러오지 못했습니다. 위 버튼으로 다운로드 페이지를 열어 주세요.' })
+})()
+</script>
+</body>
+</html>
