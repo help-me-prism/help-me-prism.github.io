@@ -1,0 +1,14 @@
+{
+  "version": "0.2.0-beta.9",
+  "capturedAt": "2026-10-05T08:07:34.502Z",
+  "source": "Actual Prism UI with isolated synthetic paper; no private vault or live AI calls.",
+  "screens": [
+    "library",
+    "settings",
+    "reader",
+    "translation",
+    "structure",
+    "chat",
+    "notes"
+  ]
+}
